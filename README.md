@@ -1,19 +1,24 @@
+// Import required modules
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 
+// Initialize Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(bodyParser.json());
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/usersDB', {
+mongoose.connect('mongodb://localhost:27017/usersdb', {
     useNewUrlParser: true,
     useUnifiedTopology: true
-}).then(() => console.log('MongoDB Connected'))
-  .catch(err => console.log(err));
+});
+
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'Connection error:'));
+db.once('open', () => console.log('Connected to MongoDB'));
 
 // User Schema & Model
 const userSchema = new mongoose.Schema({
@@ -21,60 +26,59 @@ const userSchema = new mongoose.Schema({
     email: String,
     age: Number
 });
-
 const User = mongoose.model('User', userSchema);
 
-// Create a new user (POST /users)
+// Create a new user
 app.post('/users', async (req, res) => {
     try {
-        const newUser = new User(req.body);
-        await newUser.save();
-        res.status(201).json(newUser);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
+        const user = new User(req.body);
+        await user.save();
+        res.status(201).json(user);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
     }
 });
 
-// Get all users (GET /users)
+// Retrieve all users
 app.get('/users', async (req, res) => {
     try {
         const users = await User.find();
         res.json(users);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Get a single user by ID (GET /users/:id)
+// Retrieve a single user by ID
 app.get('/users/:id', async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (!user) return res.status(404).json({ error: 'User not found' });
         res.json(user);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Update a user by ID (PUT /users/:id)
+// Update a user by ID
 app.put('/users/:id', async (req, res) => {
     try {
-        const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!updatedUser) return res.status(404).json({ message: 'User not found' });
-        res.json(updatedUser);
-    } catch (error) {
-        res.status(400).json({ message: error.message });
+        const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-// Delete a user by ID (DELETE /users/:id)
+// Delete a user by ID
 app.delete('/users/:id', async (req, res) => {
     try {
-        const deletedUser = await User.findByIdAndDelete(req.params.id);
-        if (!deletedUser) return res.status(404).json({ message: 'User not found' });
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ error: 'User not found' });
         res.json({ message: 'User deleted successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -82,4 +86,6 @@ app.delete('/users/:id', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-# Restful-api
+
+
+
